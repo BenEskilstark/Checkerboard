@@ -1,31 +1,36 @@
 <html>
-  <head>
-    <title>Simple Web App</title>
-    <link rel="stylesheet" type="text/css" href="css/styles.css">
-  </head>
-  <body>
-    <script type="module" src="js/index.js"></script>
-    <div style="width: 100%; margin: auto">
-      <stateful-client>
-        <game-board width=10 height=10>
-          <canvas class="boardcanvas" width=400 height=400
-            onclick="this.closest('game-board').canvasClick(event)"
-          />
+
+<head>
+  <title>Checkers</title>
+  <link rel="stylesheet" type="text/css" href="css/styles.css">
+</head>
+
+<body>
+  <script type="module" src="js/index.js"></script>
+  <div style="width: 600px; margin: auto; display: flex; flex-direction: column">
+    <stateful-client>
+      <screen-router initial="LOBBY">
+        <game-lobby screen="LOBBY"></game-lobby>
+        <game-board screen="GAME" width=8 height=8>
+          <div style="width: 100%; margin: 5px;">
+            <button onclick="closest('game-board').backToLobby()">
+              Back
+            </button>
+            <button onclick="closest('game-board').reset()">
+              Reset
+            </button>
+            <button onclick="closest('game-board').toggleShowLegalMoves()">
+              Show/Hide Legal Moves
+            </button>
+          </div>
+          <canvas class="boardcanvas" width=600 height=600 onmousedown="closest('game-board').canvasMouseDown(event)"
+            onmousemove="closest('game-board').canvasMouseMove(event)"
+            onmouseup="closest('game-board').canvasMouseUp(event)">
+          </canvas>
         </game-board>
-        <button onclick="this.closest('stateful-client').dispatch({type: 'TURN'})">
-          End Turn
-        </button>
-      </stateful-client>
-      <stateful-client>
-        <game-board width=18 height=18>
-          <canvas class="boardcanvas" width=800 height=800
-            onclick="this.closest('game-board').canvasClick(event)"
-          />
-        </game-board>
-        <button onclick="this.closest('stateful-client').dispatch({type: 'TURN'})">
-          End Turn
-        </button>
-      </stateful-client>
-    </div>
-  </body>
+      </screen-router>
+    </stateful-client>
+  </div>
+</body>
+
 </html>

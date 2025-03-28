@@ -1,0 +1,23 @@
+body {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+stateful-client {
+  display: inline-block;
+}
+
+game-board {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: tan;
+  width: 500;
+  height: 500;
+  border: 1px solid black;
+}
+
+.boardcanvas {
+  width: 85%;
+  height: 85%;
+}

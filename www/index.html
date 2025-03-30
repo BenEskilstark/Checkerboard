@@ -22,6 +22,9 @@
             <button onclick="closest('game-board').toggleShowLegalMoves()">
               Show/Hide Legal Moves
             </button>
+            <button onclick="closest('game-board').aiMove()">
+              AI Move
+            </button>
           </div>
           <canvas class="boardcanvas" width=600 height=600 onmousedown="closest('game-board').canvasMouseDown(event)"
             onmousemove="closest('game-board').canvasMouseMove(event)"

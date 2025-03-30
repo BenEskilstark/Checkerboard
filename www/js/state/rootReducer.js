@@ -1,5 +1,5 @@
 
-import { smartGet, smartSet } from '../utils/arraysAndObjects.js';
+import { smartGet, smartSet, deepCopy } from '../utils/arraysAndObjects.js';
 
 export const rootReducer = (state, action) => {
   if (state === undefined) state = initState();
@@ -22,6 +22,22 @@ export const rootReducer = (state, action) => {
               );
             }
           }
+          // repro-ing double-jump bug:
+          // smartSet(board,
+          //   { x: 0, y: 0 }, { x: 0, y: 0, color: "black" },
+          // );
+          // smartSet(board,
+          //   { x: 1, y: 1 }, { x: 1, y: 1, color: "red" },
+          // );
+          // smartSet(board,
+          //   { x: 3, y: 3 }, { x: 3, y: 3, color: "red" },
+          // );
+          // smartSet(board,
+          //   { x: 4, y: 0 }, { x: 4, y: 0, color: "black" },
+          // );
+          // smartSet(board,
+          //   { x: 5, y: 1 }, { x: 5, y: 1, color: "red" },
+          // );
           break;
         }
         case "FOX_AND_HOUNDS": {
@@ -34,51 +50,119 @@ export const rootReducer = (state, action) => {
       }
       state = { ...state, turn: 0, board, };
       state.legalMoves = getAllLegalMoves(state, colors[state.turn % 2])
+      state.inDoubleJump = null;
+      state.prevMove = null;
       return state;
     }
     case 'TURN':
       return { ...state, turn: state.turn + 1 };
+    case 'DO_AI_MOVE': {
+      const aiState = minimax(deepCopy(state), state.colors[state.turn % 2]);
+      return moveReducer(state, aiState.prevMove);
+    }
     case 'MOVE_PIECE': {
-      const { fromPos, toPos } = action;
-      const { board, colors, height, rules } = state;
-      const piece = smartGet(board, fromPos);
-
-      const { isLegal, isJump, jumpPos } = isLegalMove(state, piece, toPos);
-      if (!isLegal) return state;
-
-      smartSet(board, fromPos, null);
-      const movedPiece = { ...piece, ...toPos };
-      smartSet(board, toPos, movedPiece);
-      if (isJump) {
-        smartSet(board, jumpPos, null);
-        if (getAllLegalJumps(state, piece.color).length == 0) {
-          state.turn++;
-          state.inDoubleJump = null;
-        } else {
-          state.inDoubleJump = movedPiece;
-        }
-      } else {
-        state.inDoubleJump = null;
-        state.turn++;
-      }
-
-      if (rules == "CHECKERS") {
-        if (movedPiece.color == "black" && movedPiece.y == height - 1) {
-          movedPiece.isKing = true;
-        }
-        if (movedPiece.color == "red" && movedPiece.y == 0) {
-          movedPiece.isKing = true;
-        }
-      }
-
-
-      state.legalMoves = getAllLegalMoves(state, colors[state.turn % 2])
-      return state;
+      return moveReducer(state, action);
     }
     default:
       return state;
   }
 };
+
+
+const evalFunc = ({ board, rules }) => {
+  let score = 0;
+  for (let coord in board) {
+    const piece = board[coord];
+    if (piece == null) continue;
+    let delta = piece.isKing ? 4 : 1;
+    if (piece.color == "red") delta *= -1;
+    score += delta;
+  }
+  return score;
+};
+
+
+export const minimax = (state, color) => {
+  if (state.curAIDepth >= state.aiDepth) {
+    state.curBestScore = evalFunc(state);
+    return state;
+  }
+
+  const curColor = state.colors[state.turn % 2];
+  const moves = getAllLegalMoves(state, curColor);
+  let bestScore = curColor == "black" ? -Infinity : Infinity;
+  let bestMove = null;
+  for (let move of moves) {
+    let nextState = moveReducer(deepCopy(state), move);
+    nextState.curAIDepth++;
+    nextState = minimax(nextState, color);
+    if (curColor == "black") {
+      if (nextState.curBestScore > bestScore ||
+        (nextState.curBestScore == bestScore && Math.random() < 0.3)
+      ) {
+        bestScore = nextState.curBestScore;
+        bestMove = move;
+      }
+    } else {
+      if (nextState.curBestScore < bestScore ||
+        (nextState.curBestScore == bestScore && Math.random() < 0.4)
+
+      ) {
+        bestScore = nextState.curBestScore;
+        bestMove = move;
+      }
+    }
+  }
+
+  state.curBestScore = bestScore;
+  state.prevMove = bestMove;
+  return state;
+}
+
+
+export const moveReducer = (state, action) => {
+  const { fromPos, toPos } = action;
+  const { board, colors, height, rules } = state;
+  const piece = smartGet(board, fromPos);
+
+  const { isLegal, isJump, jumpPos } = isLegalMove(state, piece, toPos);
+  if (!isLegal) return state;
+
+  smartSet(board, fromPos, null);
+  const movedPiece = { ...piece, ...toPos };
+  smartSet(board, toPos, movedPiece);
+  if (isJump) {
+    smartSet(board, jumpPos, null);
+    const jumps = getAllLegalJumps(state, piece.color);
+    // console.log(jumps, movedPiece);
+    if (
+      jumps.length == 0 ||
+      !jumps.some(j => j.fromPos.x == movedPiece.x && j.fromPos.y == movedPiece.y)
+    ) {
+      state.turn++;
+      state.inDoubleJump = null;
+    } else {
+      state.inDoubleJump = movedPiece;
+    }
+  } else {
+    state.inDoubleJump = null;
+    state.turn++;
+  }
+
+  if (rules == "CHECKERS") {
+    if (movedPiece.color == "black" && movedPiece.y == height - 1) {
+      movedPiece.isKing = true;
+    }
+    if (movedPiece.color == "red" && movedPiece.y == 0) {
+      movedPiece.isKing = true;
+    }
+  }
+
+  state.legalMoves = getAllLegalMoves(state, colors[state.turn % 2]);
+  state.prevMove = deepCopy(action);
+  return state;
+}
+
 
 export const isLegalMove = (state, piece, { x, y }) => {
   const { width, height, board, colors, turn, rules, inDoubleJump } = state;
@@ -115,6 +199,7 @@ export const isLegalMove = (state, piece, { x, y }) => {
   return { isLegal: true };
 }
 
+
 export const getNeighbors = (piece) => {
   const blackMoves = [{ x: -1, y: 1 }, { x: 1, y: 1 }]
     .map(p => ({ x: p.x + piece.x, y: p.y + piece.y }));
@@ -125,6 +210,7 @@ export const getNeighbors = (piece) => {
   }
   return piece.color == "black" ? blackMoves : redMoves;
 }
+
 
 export const getJumpNeighbors = ({ board }, piece) => {
   const otherColor = piece.color == "red" ? "black" : "red";
@@ -139,6 +225,7 @@ export const getJumpNeighbors = ({ board }, piece) => {
   }
   return piece.color == "black" ? blackMoves : redMoves;
 }
+
 
 export const getAllLegalMoves = (state, color) => {
   const { width, height, board, rules } = state;
@@ -184,11 +271,15 @@ export const getAllLegalMoves = (state, color) => {
   return allJumpMoves.length > 0 ? allJumpMoves : allRegularMoves;
 }
 
+
 export const getAllLegalJumps = (state, color) => {
   const jumps = getAllLegalMoves(state, color)
     .filter(m => m.isJump);
   return jumps;
 }
+
+window.getAllLegalJumps = getAllLegalJumps;
+window.getAllLegalMoves = getAllLegalMoves;
 
 export const initState = () => {
   return {
@@ -201,6 +292,12 @@ export const initState = () => {
     showLegalMoves: false,
     width: 8, height: 8,
     board: {}, // smartMap<{x, y, color, isKing}>
+
+    aiDepth: 5, // plies
+    curAIDepth: 0,
+    curBestScore: 0,
+    prevMove: null,
+
     mouse: {
       piece: null,
       downPos: null,

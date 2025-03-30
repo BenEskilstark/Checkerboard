@@ -34,6 +34,13 @@ export default class GameBoard extends StatefulHTML {
         if (x % 2 != y % 2) continue;
         ctx.fillStyle = "brown";
         ctx.fillRect(x * sqSize, y * sqSize, sqSize, sqSize);
+        if ((state.prevMove?.toPos.x == x && state.prevMove?.toPos.y == y) ||
+          (state.prevMove?.fromPos.x == x && state.prevMove?.fromPos.y == y)
+        ) {
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "steelblue";
+          ctx.strokeRect(x * sqSize, y * sqSize, sqSize, sqSize);
+        }
       }
     }
 
@@ -142,6 +149,10 @@ export default class GameBoard extends StatefulHTML {
 
   toggleShowLegalMoves() {
     this.dispatch({ showLegalMoves: !this.getState().showLegalMoves });
+  }
+
+  aiMove() {
+    this.dispatch({ type: "DO_AI_MOVE" });
   }
 }
 

@@ -8,6 +8,28 @@ export const arrayToMapKeys = (arr, keyFn) => {
   return map;
 }
 
+export const deepCopy = (obj) => {
+  if (typeof obj !== 'object' || obj == null) {
+    return obj;
+  }
+
+  const copy = {};
+  for (const key in obj) {
+    if (typeof obj[key] === 'object' && obj[key] != null) {
+      if (Array.isArray(obj[key])) {
+        copy[key] = [];
+        for (const elem of obj[key]) {
+          copy[key].push(deepCopy(elem));
+        }
+      } else {
+        copy[key] = deepCopy(obj[key]);
+      }
+    } else {
+      copy[key] = obj[key];
+    }
+  }
+  return copy;
+}
 
 ///////////////////
 // SmartMap stuff:

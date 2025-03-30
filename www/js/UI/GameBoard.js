@@ -129,6 +129,7 @@ export default class GameBoard extends StatefulHTML {
   /////////////////////////////////////////////////////////////////////////////
   // Mouse Handlers
   canvasMouseDown(ev) {
+    ev.preventDefault();
     const { x, y } = this.convertPixelToBoardSquare(ev);
     const { mouse, board, turn, colors } = this.getState();
     const piece = smartGet(board, { x, y });
@@ -138,6 +139,7 @@ export default class GameBoard extends StatefulHTML {
   }
 
   canvasMouseUp(ev) {
+    ev.preventDefault();
     const toPos = this.convertPixelToBoardSquare(ev);
     const { mouse } = this.getState();
     const fromPos = mouse.downPos;
@@ -146,6 +148,7 @@ export default class GameBoard extends StatefulHTML {
   }
 
   canvasMouseMove(ev) {
+    ev.preventDefault();
     const { mouse } = this.getState();
     if (mouse.piece == null) return;
     const x = ev.offsetX;

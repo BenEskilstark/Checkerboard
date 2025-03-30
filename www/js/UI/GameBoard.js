@@ -18,7 +18,24 @@ export default class GameBoard extends StatefulHTML {
   }
 
   render(state) {
-    const { width, height, board, mouse, legalMoves } = state;
+    const { width, height, board, mouse, legalMoves, rules } = state;
+
+    const topbar = this.querySelector("#topbar");
+    topbar.innerHTML = `
+      <button onclick="closest('game-board').backToLobby()">
+        Back
+      </button>
+      <button onclick="closest('game-board').reset()">
+        Reset
+      </button>
+      <button onclick="closest('game-board').toggleShowLegalMoves()">
+        Show/Hide Legal Moves
+      </button>
+      ${rules == "CHECKERS" ? `<button onclick="closest('game-board').aiMove()">
+          AI Move
+        </button>` : ""
+      }
+    `;
 
     const canvas = this.querySelector("canvas")
     if (!canvas) return;

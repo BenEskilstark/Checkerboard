@@ -12,20 +12,7 @@
       <screen-router initial="LOBBY">
         <game-lobby screen="LOBBY"></game-lobby>
         <game-board screen="GAME" width=8 height=8>
-          <div style="width: 100%; margin: 5px;">
-            <button onclick="closest('game-board').backToLobby()">
-              Back
-            </button>
-            <button onclick="closest('game-board').reset()">
-              Reset
-            </button>
-            <button onclick="closest('game-board').toggleShowLegalMoves()">
-              Show/Hide Legal Moves
-            </button>
-            <button onclick="closest('game-board').aiMove()">
-              AI Move
-            </button>
-          </div>
+          <div id="topbar" style="width: 100%; margin: 5px;"></div>
           <canvas class="boardcanvas" width=600 height=600 onmousedown="closest('game-board').canvasMouseDown(event)"
             onmousemove="closest('game-board').canvasMouseMove(event)"
             onmouseup="closest('game-board').canvasMouseUp(event)">

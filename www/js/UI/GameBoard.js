@@ -1,5 +1,5 @@
 import StatefulHTML from './StatefulHTML.js';
-import { smartGet, smartSet } from '../utils/arraysAndObjects.js';
+import { smartGet, smartSet, fromKey } from '../utils/arraysAndObjects.js';
 
 
 export default class GameBoard extends StatefulHTML {
@@ -85,13 +85,32 @@ export default class GameBoard extends StatefulHTML {
 
     // legal moves
     if (state.showLegalMoves) {
-      for (let move of legalMoves) {
-        const { toPos } = move;
-        const { x, y } = toPos;
-        ctx.fillStyle = "yellow";
-        ctx.beginPath();
-        ctx.arc(x * sqSize + sqSize / 2, y * sqSize + sqSize / 2, sqSize / 12 - 3, 0, Math.PI * 2);
-        ctx.fill();
+      if (!state.showNextMoveScores) {
+        for (let move of legalMoves) {
+          const { toPos } = move;
+          const { x, y } = toPos;
+          ctx.fillStyle = "yellow";
+          ctx.beginPath();
+          ctx.arc(x * sqSize + sqSize / 2, y * sqSize + sqSize / 2, sqSize / 12 - 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        const toPoses = {};
+        for (let move of state.nextMoveScores) {
+          const { toPos, score } = move;
+          smartSet(toPoses, toPos, [...(smartGet(toPoses, toPos) ?? []), score]);
+        }
+        for (let toPos in toPoses) {
+          let scoreString = "";
+          for (const score of toPoses[toPos]) {
+            scoreString += score + " ";
+          }
+          const { x, y } = fromKey(toPos);
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 1;
+          ctx.font = "15px Verdana";
+          ctx.strokeText(scoreString, x * sqSize + sqSize / 2 - 3, y * sqSize + sqSize / 2 + 3);
+        }
       }
     }
 
